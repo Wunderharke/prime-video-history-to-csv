@@ -31,5 +31,11 @@ jobs:
       - name: Install pre-requistes for this script.
         run: pip install -r requirements.txt
         
+      - name: Locate chromedriver.
+        run: whereis chromedriver
+        
       - name: Run the script.
         run: python prime-video-history-to-csv.py ${{ secrets.USERNAME }} ${{ secrets.PASSWORD }}
+        
+      - name: List files and folders in working directory.
+        run: ls
