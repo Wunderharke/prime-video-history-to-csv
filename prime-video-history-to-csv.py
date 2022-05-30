@@ -23,7 +23,8 @@ chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 
 # In your terminal window do a 'whereis chromedriver' to find the location of chromedriver and make sure the path below is correct.
-driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options)
+driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options) # uncomment for ubuntu
+# driver = webdriver.Chrome(service=Service("/usr/lib/chromium-browser/chromedriver"), options=chrome_options) 
 
 
 def navigate_pages():
@@ -154,4 +155,9 @@ if __name__ == "__main__":
     parser.add_argument('password', help='where you want the photos moved to')
     args = parser.parse_args()
 
-    main(args.username, args.password)
+    try:
+        main(args.username, args.password)
+        exit(0)
+    except Exception as e:
+        print(e)
+        exit(1)
