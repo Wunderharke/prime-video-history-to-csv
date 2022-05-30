@@ -39,3 +39,6 @@ jobs:
         
       - name: List files and folders in working directory.
         run: ls
+        
+      - name: Show contents of prime_video_history.csv file.
+        run: cat prime_video_history.csv
