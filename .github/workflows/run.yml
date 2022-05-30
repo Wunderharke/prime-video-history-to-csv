@@ -32,4 +32,4 @@ jobs:
         run: pip install -r requirements.txt
         
       - name: Run the script.
-        run: python prime-video-history-to-csv.py
+        run: python prime-video-history-to-csv.py ${{ secrets.USERNAME }} ${{ secrets.PASSWORD }}
