@@ -147,6 +147,12 @@ def main(username, password):
     # Navigate to viewing activity page
     driver.get('https://www.amazon.co.uk/gp/video/settings/watch-history?ref_=dv_auth_ret&')
 
+    # Do a check here if we're on the Watch History page or what.
+    page_header_check = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]//h3')
+    if len(page_header_check) < 1:
+        print("Not logged in properly")
+        raise Exception
+    
     navigate_pages()
 
 if __name__ == "__main__":
