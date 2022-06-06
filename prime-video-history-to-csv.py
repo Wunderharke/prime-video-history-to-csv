@@ -12,20 +12,23 @@ from selenium.webdriver.chrome.options import Options
 
 import time
 import argparse
+from datetime import datetime
+from datetime import datetime, timedelta
 
 # List that is filled with strings of viewing activity
 activity_list = []
 
 # Initialising PhantomJS driver
 chrome_options = Options()
-chrome_options.add_argument('--headless')
+#chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 
 # In your terminal window do a 'whereis chromedriver' to find the location of chromedriver and make sure the path below is correct.
-driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options) # uncomment for ubuntu
-# driver = webdriver.Chrome(service=Service("/usr/lib/chromium-browser/chromedriver"), options=chrome_options) 
+# driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options) # uncomment for ubuntu
+driver = webdriver.Chrome(service=Service("/usr/lib/chromium-browser/chromedriver"), options=chrome_options) 
 
+DAYS_WORTH_OF_HISTORY = None
 
 def navigate_pages():
     """
@@ -35,7 +38,6 @@ def navigate_pages():
 
     scroll_to_bottom()
     expand_episodes_watched()
-    get_page_activity()
     output_activity(activity_list)
 
 
@@ -58,39 +60,10 @@ def scroll_to_bottom():
             break
         last_height = new_height
 
-def get_page_activity():
-    """
-    Gets all viewing activity on current page
-    """
-
-    # List that contains all row elements on viewing activity page
-    row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]/ul/li')
-    print(len(row_list))
-
-    # Works to here
-
-    # date
-    # //div[@data-automation-id="activity-history-items"]/ul/li/div/div
-
-    # show
-    # //div[@data-automation-id="activity-history-items"]/ul/li/ul/li/div/div/div/div/a
-
-    # episodes
-    # //div[@data-automation-id="activity-history-items"]/ul/li/ul/li/div/ul/li/div/p
-    # /ul/li/div/ul/li
-
-    for row in row_list:
-        print("################")
-
-        eps = row.find_elements_by_xpath('./ul/li/div/ul/li/div/p')
-        for ep in eps:
-            date = row.find_element_by_xpath('./div/div')
-            show = row.find_element_by_xpath('./ul/li/div/div/div/div/a')
-            print(date.text + " " + show.text + " " + ep.text)
-            activity_list.append(date.text + ", " + show.text + " " + ep.text + '\n')
-
 
 def expand_episodes_watched():
+    more_than_needed = False
+
     time.sleep(9)
     row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]//input[@type="checkbox"]')
 
@@ -98,6 +71,48 @@ def expand_episodes_watched():
         time.sleep(0.4)
         driver.execute_script("arguments[0].scrollIntoView();", row)
         driver.execute_script("arguments[0].click();", row)
+
+        if DAYS_WORTH_OF_HISTORY:
+            row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]/ul/li')
+            for row in row_list:
+                eps = row.find_elements_by_xpath('./ul/li/div/ul/li/div/p')
+                for ep in eps:
+                    date = row.find_element_by_xpath('./div/div')
+                    datetime_object = datetime.strptime(date.text, '%d %B %Y')
+                    if DAYS_WORTH_OF_HISTORY:
+                        time_between = datetime.now() - datetime_object
+                        if time_between.days>DAYS_WORTH_OF_HISTORY:
+                            more_than_needed = True
+                            break
+                    
+                if more_than_needed:
+                    break
+            
+            if more_than_needed:
+                break
+
+    """
+    Gets all viewing activity on current page
+    """
+    # List that contains all row elements on viewing activity page
+    row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]/ul/li')
+    for row in row_list:
+        print("################")
+
+        eps = row.find_elements_by_xpath('./ul/li/div/ul/li/div/p')
+        for ep in eps:
+            date = row.find_element_by_xpath('./div/div')
+            datetime_object = datetime.strptime(date.text, '%d %B %Y')
+            if DAYS_WORTH_OF_HISTORY:
+                time_between = datetime.now() - datetime_object
+                if time_between.days>DAYS_WORTH_OF_HISTORY:
+                    break
+            date_string = datetime_object.strftime('%d/%m/%y')
+            show = row.find_element_by_xpath('./ul/li/div/div/div/div/a')
+            show_title = show.text.replace(",", "")
+            ep_name = ep.text.replace(",", "")
+            print(date_string + " " + show_title + " " + ep_name)
+            activity_list.append(date_string + ", " + show_title + " " + ep_name + '\n')
 
 
 def output_activity(activity_list):
@@ -157,13 +172,12 @@ def main(username, password):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('username', help='location of the folder with all your photos')
-    parser.add_argument('password', help='where you want the photos moved to')
+    parser.add_argument('--username', required=True, help='Your amazon prime video username')
+    parser.add_argument('--password', required=True, help='Amazon password')
+    parser.add_argument('--history', required=False, type=int, help='How many days worth of history do you want?')
     args = parser.parse_args()
+    
+    if args.history:
+        DAYS_WORTH_OF_HISTORY = args.history
 
-    try:
-        main(args.username, args.password)
-        exit(0)
-    except Exception as e:
-        print(e)
-        exit(1)
+    main(args.username, args.password)
