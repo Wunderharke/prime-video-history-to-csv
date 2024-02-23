@@ -134,7 +134,7 @@ def output_activity(activity_list):
     print('Process finished')
 
 
-def main(username, password):
+def main():
     """
     Logs into Amazon
     """
@@ -146,7 +146,7 @@ def main(username, password):
     # Clearing email textbox and typing in user's email
     time.sleep(10)
     driver.find_element_by_id('ap_email').clear()
-    driver.find_element_by_id('ap_email').send_keys(username)
+    driver.find_element_by_id('ap_email').send_keys(input("Enter your username"))
 
     # Clicking on submit button
     driver.find_element_by_id('continue').click()
@@ -154,10 +154,18 @@ def main(username, password):
     # Clearing password textbox and typing in user's password
     time.sleep(10)
     driver.find_element_by_id('ap_password').clear()
-    driver.find_element_by_id('ap_password').send_keys(password)
+    driver.find_element_by_id('ap_password').send_keys(input("Enter your password"))
 
     # Clicking on submit button
     driver.find_element_by_id('signInSubmit').click()
+
+    # Clearing MFA textbox and wait for MFA code
+    time.sleep(10)
+    driver.find_element_by_id('auth-mfa-otpcode').clear()
+    driver.find_element_by_id('auth-mfa-otpcode').send_keys(input("Enter your MFA code"))
+
+    # Clicking on submit button
+    driver.find_element_by_id('auth-signin-button').click()
 
     # Navigate to viewing activity page
     driver.get('https://www.amazon.co.uk/gp/video/settings/watch-history?ref_=dv_auth_ret&')
@@ -172,12 +180,10 @@ def main(username, password):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--username', required=True, help='Your amazon prime video username')
-    parser.add_argument('--password', required=True, help='Amazon password')
     parser.add_argument('--history', required=False, type=int, help='How many days worth of history do you want?')
     args = parser.parse_args()
     
     if args.history:
         DAYS_WORTH_OF_HISTORY = args.history
 
-    main(args.username, args.password)
+    main()
