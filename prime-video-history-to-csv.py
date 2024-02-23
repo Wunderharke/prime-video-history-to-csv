@@ -1,32 +1,26 @@
 #!/usr/bin/python3
 
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-import time
-import codecs
-
-from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
-
 import time
+import codecs
 import argparse
-from datetime import datetime
 from datetime import datetime, timedelta
 
 # List that is filled with strings of viewing activity
 activity_list = []
 
-# Initialising PhantomJS driver
+# Initialising Chrome driver
 chrome_options = Options()
 #chrome_options.add_argument('--headless')
 chrome_options.add_argument('--no-sandbox')
 chrome_options.add_argument('--disable-dev-shm-usage')
 
 # In your terminal window do a 'whereis chromedriver' to find the location of chromedriver and make sure the path below is correct.
-# driver = webdriver.Chrome(service=Service("/usr/bin/chromedriver"), options=chrome_options) # uncomment for ubuntu
-driver = webdriver.Chrome(service=Service("/usr/lib/chromium-browser/chromedriver"), options=chrome_options) 
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
 DAYS_WORTH_OF_HISTORY = None
 
@@ -39,7 +33,6 @@ def navigate_pages():
     scroll_to_bottom()
     expand_episodes_watched()
     output_activity(activity_list)
-
 
 def scroll_to_bottom():
     SCROLL_PAUSE_TIME = 0.5
@@ -60,12 +53,11 @@ def scroll_to_bottom():
             break
         last_height = new_height
 
-
 def expand_episodes_watched():
     more_than_needed = False
 
     time.sleep(9)
-    row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]//input[@type="checkbox"]')
+    row_list = driver.find_elements(By.XPATH, '//div[@data-automation-id="activity-history-items"]//input[@type="checkbox"]')
 
     for row in row_list:
         time.sleep(0.4)
@@ -73,15 +65,15 @@ def expand_episodes_watched():
         driver.execute_script("arguments[0].click();", row)
 
         if DAYS_WORTH_OF_HISTORY:
-            row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]/ul/li')
+            row_list = driver.find_elements(By.XPATH, '//div[@data-automation-id="activity-history-items"]/ul/li')
             for row in row_list:
-                eps = row.find_elements_by_xpath('./ul/li/div/ul/li/div/p')
+                eps = row.find_elements(By.XPATH, './ul/li/div/ul/li/div/p')
                 for ep in eps:
-                    date = row.find_element_by_xpath('./div/div')
+                    date = row.find_element(By.XPATH, './div/div')
                     datetime_object = datetime.strptime(date.text, '%d %B %Y')
                     if DAYS_WORTH_OF_HISTORY:
                         time_between = datetime.now() - datetime_object
-                        if time_between.days>DAYS_WORTH_OF_HISTORY:
+                        if time_between.days > DAYS_WORTH_OF_HISTORY:
                             more_than_needed = True
                             break
                     
@@ -94,32 +86,29 @@ def expand_episodes_watched():
     """
     Gets all viewing activity on current page
     """
-    # List that contains all row elements on viewing activity page
-    row_list = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]/ul/li')
+    row_list = driver.find_elements(By.XPATH, '//div[@data-automation-id="activity-history-items"]/ul/li')
     for row in row_list:
         print("################")
 
-        eps = row.find_elements_by_xpath('./ul/li/div/ul/li/div/p')
+        eps = row.find_elements(By.XPATH, './ul/li/div/ul/li/div/p')
         for ep in eps:
-            date = row.find_element_by_xpath('./div/div')
+            date = row.find_element(By.XPATH, './div/div')
             datetime_object = datetime.strptime(date.text, '%d %B %Y')
             if DAYS_WORTH_OF_HISTORY:
                 time_between = datetime.now() - datetime_object
-                if time_between.days>DAYS_WORTH_OF_HISTORY:
+                if time_between.days > DAYS_WORTH_OF_HISTORY:
                     break
             date_string = datetime_object.strftime('%d/%m/%y')
-            show = row.find_element_by_xpath('./ul/li/div/div/div/div/a')
+            show = row.find_element(By.XPATH, './ul/li/div/div/div/div/a')
             show_title = show.text.replace(",", "")
             ep_name = ep.text.replace(",", "")
             print(date_string + " " + show_title + " " + ep_name)
             activity_list.append(date_string + ", " + show_title + " " + ep_name + '\n')
 
-
 def output_activity(activity_list):
     """
     Outputs viewing activity into 'SERVICE_activity.txt'
     """
-
     service = 'prime_video'
 
     print('Writing activity to \'%s_activity.txt\'' % service.lower())
@@ -133,45 +122,43 @@ def output_activity(activity_list):
     file.close()
     print('Process finished')
 
-
 def main():
     """
     Logs into Amazon
     """
-
     print('Logging into Amazon')
 
     driver.get("https://www.amazon.co.uk/gp/video/settings/watch-history?ref_=dv_auth_ret&")
 
     # Clearing email textbox and typing in user's email
     time.sleep(10)
-    driver.find_element_by_id('ap_email').clear()
-    driver.find_element_by_id('ap_email').send_keys(input("Enter your username"))
+    driver.find_element(By.ID, 'ap_email').clear()
+    driver.find_element(By.ID, 'ap_email').send_keys(input("Enter your username\n"))
 
     # Clicking on submit button
-    driver.find_element_by_id('continue').click()
+    driver.find_element(By.ID, 'continue').click()
 
     # Clearing password textbox and typing in user's password
     time.sleep(10)
-    driver.find_element_by_id('ap_password').clear()
-    driver.find_element_by_id('ap_password').send_keys(input("Enter your password"))
+    driver.find_element(By.ID, 'ap_password').clear()
+    driver.find_element(By.ID, 'ap_password').send_keys(input("Enter your password\n"))
 
     # Clicking on submit button
-    driver.find_element_by_id('signInSubmit').click()
+    driver.find_element(By.ID, 'signInSubmit').click()
 
     # Clearing MFA textbox and wait for MFA code
     time.sleep(10)
-    driver.find_element_by_id('auth-mfa-otpcode').clear()
-    driver.find_element_by_id('auth-mfa-otpcode').send_keys(input("Enter your MFA code"))
+    driver.find_element(By.ID, 'auth-mfa-otpcode').clear()
+    driver.find_element(By.ID, 'auth-mfa-otpcode').send_keys(input("Enter your MFA code\n"))
 
     # Clicking on submit button
-    driver.find_element_by_id('auth-signin-button').click()
+    driver.find_element(By.ID, 'auth-signin-button').click()
 
     # Navigate to viewing activity page
     driver.get('https://www.amazon.co.uk/gp/video/settings/watch-history?ref_=dv_auth_ret&')
 
     # Do a check here if we're on the Watch History page or what.
-    page_header_check = driver.find_elements_by_xpath('//div[@data-automation-id="activity-history-items"]//h3')
+    page_header_check = driver.find_elements(By.XPATH, '//div[@data-automation-id="activity-history-items"]//h3')
     if len(page_header_check) < 1:
         print("Not logged in properly")
         raise Exception
@@ -187,3 +174,4 @@ if __name__ == "__main__":
         DAYS_WORTH_OF_HISTORY = args.history
 
     main()
+
